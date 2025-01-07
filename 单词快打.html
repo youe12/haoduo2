@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单词快打游戏</title>
+    <style>
+        /* 设置全局样式 */
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* 顶部导航栏样式 */
+        header {
+            width: 100%;
+            background-color: #0073e6;
+            color: white;
+            text-align: center;
+            padding: 1rem 0;
+        }
+
+        header h1 {
+            margin: 0;
+        }
+
+        .score {
+            font-size: 1.2rem;
+            margin-top: 0.5rem;
+        }
+
+        nav {
+            margin-top: 1rem;
+        }
+
+        nav button {
+            margin: 0 0.5rem;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        /* 主展示区域样式 */
+        main {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            width: 100%;
+            background-color: #fff;
+            border-top: 2px solid #0073e6;
+            border-bottom: 2px solid #0073e6;
+            overflow: hidden;
+        }
+
+        .falling-words {
+            position: absolute;
+            top: 0;
+            width: 80%;
+            height: 100%;
+        }
+
+        .falling-word {
+            position: absolute;
+            top: 0;
+        }
+
+        /* 输入框区域样式 */
+        footer {
+            width: 100%;
+            padding: 1rem 0;
+            background-color: #0073e6;
+            display: flex;
+            justify-content: center;
+        }
+
+        #typing-input {
+            width: 80%;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部导航栏 -->
+        <header>
+            <h1>单词快打游戏</h1>
+            <div class="score">
+                成绩: <span id="score">0</span>
+            </div>
+            <nav>
+                <button id="start-btn">开始</button>
+                <button id="pause-btn">暂停</button>
+                <button id="restart-btn">重来</button>
+            </nav>
+        </header>
+
+        <!-- 主展示区域 -->
+        <main>
+            <div class="falling-words" id="falling-words"></div>
+        </main>
+
+        <!-- 输入框区域 -->
+        <footer>
+            <input type="text" id="typing-input" placeholder="在此键入下降的单词...">
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const startButton = document.getElementById('start-btn');
+            const pauseButton = document.getElementById('pause-btn');
+            const restartButton = document.getElementById('restart-btn');
+            const typingInput = document.getElementById('typing-input');
+            const fallingWordsContainer = document.getElementById('falling-words');
+            const scoreElement = document.getElementById('score');
+
+            let score = 0;
+            let gameInterval;
+            let fallInterval;
+            let isPaused = false;
+
+            // 单词列表，确保使用英文单词
+            const words = [  'love', 'performance', 'change', 'success', 'development', 'way', 'quickly', 'harmony', 'progress', 'solve', 'end', 'blank', 'happiness', 'waste', 'beauty', 'ability', 'balance', 'expectation', 'diligence', 'situation', 'task', 'failure', 'hope', 'impact', 'passion', 'advance', 'tolerance', 'implementation', 'relative', 'trust', 'hero', 'excellent', 'awareness', 'final', 'outstanding', 'responsibility', 'preparation', 'competition', 'evolution', 'establish', 'challenge', 'contrast', 'regulation', 'skills', 'resources', 'confidence'];
+            let activeWords = [];
+
+            const startGame = () => {
+                score = 0;
+                scoreElement.textContent = score;
+                activeWords = [];
+                fallingWordsContainer.innerHTML = '';
+                typingInput.value = '';
+                typingInput.focus();
+                gameInterval = setInterval(generateWord, 2000);
+                fallInterval = setInterval(moveWordsDown, 50);
+                isPaused = false;
+            };
+
+            const pauseGame = () => {
+                if (!isPaused) {
+                    clearInterval(gameInterval);
+                    clearInterval(fallInterval);
+                    isPaused = true;
+                } else {
+                    gameInterval = setInterval(generateWord, 2000);
+                    fallInterval = setInterval(moveWordsDown, 50);
+                    isPaused = false;
+                }
+            };
+
+            const restartGame = () => {
+                clearInterval(gameInterval);
+                clearInterval(fallInterval);
+                startGame();
+            };
+
+            const generateWord = () => {
+                const word = words[Math.floor(Math.random() * words.length)];
+                const wordElement = document.createElement('div');
+                wordElement.classList.add('falling-word');
+                wordElement.textContent = word;
+                wordElement.style.left = `${Math.random() * (fallingWordsContainer.clientWidth - 100)}px`;
+                fallingWordsContainer.appendChild(wordElement);
+                activeWords.push(wordElement);
+            };
+
+            const moveWordsDown = () => {
+                for (let i = activeWords.length - 1; i >= 0; i--) {
+                    const wordElement = activeWords[i];
+                    wordElement.style.top = `${(parseFloat(wordElement.style.top) || 0) + 2}px`;
+                    if (parseFloat(wordElement.style.top) >= fallingWordsContainer.clientHeight - 40) {
+                        endGame();
+                        return;
+                    }
+                }
+            };
+
+            const checkWord = () => {
+                const inputWord = typingInput.value.trim().toLowerCase();
+                for (let i = 0; i < activeWords.length; i++) {
+                    if (activeWords[i].textContent === inputWord) {
+                        fallingWordsContainer.removeChild(activeWords[i]);
+                        activeWords.splice(i, 1);
+                        score += 1;
+                        scoreElement.textContent = score;
+                        typingInput.value = '';
+                        break;
+                    }
+                }
+            };
+
+            const endGame = () => {
+                clearInterval(gameInterval);
+                clearInterval(fallInterval);
+                alert('游戏结束! 你的成绩: ' + score);
+            };
+
+            typingInput.addEventListener('input', checkWord);
+            startButton.addEventListener('click', startGame);
+            pauseButton.addEventListener('click', pauseGame);
+            restartButton.addEventListener('click', restartGame);
+        });
+    </script>
+</body>
+</html>
